@@ -8,15 +8,17 @@ def initialize_layers(X,Y,hidden_layers):
     n_x = X.shape[0]
     n_h = {}
 
-    for i in range(0,hidden_layers):
-        n_h[str(i+1)] = 5
+    for i in range(0,hidden_layers+1):
+        n_h[str(i+1)] = 100*100*3
 
-    n_y = Y.shape[0]
+    n_y = 1
+    print("n_x " + str(n_x))
     return (n_x, n_h, n_y)
 
 
 
 def initialize_parameters(n_x,n_h,n_y):
+    print("n_y " + str(n_y))
     W = {}
     #W["0"] = n_x
     B = {}
@@ -24,7 +26,7 @@ def initialize_parameters(n_x,n_h,n_y):
     n_h["0"] = n_x
     for i in range(0, l):
         #print(i)
-        #print("Ws index " + str(i+1))
+        print("Ws index " + str(i+1))
         #W[str(i+1)] = np.random.randn(n_h[str(i)],n_h[str(i+1)])*0.01
         W[str(i+1)] = np.random.randn(n_h[str(i+1)],n_h[str(i)])*0.01
         #print("here")
@@ -33,8 +35,11 @@ def initialize_parameters(n_x,n_h,n_y):
 
     #W[str(l+1)] = np.random.randn(n_h[str(l-1)],n_y)*0.01
     W[str(l+1)] = np.random.randn(n_y,n_h[str(l-1)])*0.01
-    #print("Ws index " + str(l+1))
+    print("Ws index " + str(l+1))
     B[str(l+1)] = np.zeros((n_y,1))
+    for i in range(1,l+2):
+        print("Weight layer " + str(i) + " " + str(W[str(i)].shape))
+        print("Bias layer " + str(i) + " " + str(W[str(i)].shape))
     return (W,B)
 
 
@@ -58,17 +63,21 @@ def forward_propogation(X,W,B):
             Z[str(i+1)] = np.dot(W[str(i+1)],A[str(i)]) + B[str(i+1)]
             A[str(i+1)] = 1.0/(1.0+np.exp(-Z[str(i+1)]))
             A_final = A[str(i+1)]
+        #print("Zs index shape " + str(i+1) + " " + str(Z[str(i+1)].shape))
     return (Z,A,A_final)
 
 
 def cost_function(A_final,Y):
+    #print("Y shape " + str(Y.shape))
+    #print("A shape " + str(A_final.shape))
     #logprobs = np.multiply(np.log(A_final),Y)
     m = Y.shape[1]
-    log1 = (1.0/m)*(np.dot(np.log(A_final),Y.T))
-    log2 = (1.0/m)*(np.dot(1.0-Y,np.log(1.0-A_final).T))
+    log1 = (1.0/m)*(np.multiply(Y,np.log(A_final)))
+    log2 = (1.0/m)*(np.multiply(1.0-Y,np.log(1.0-A_final)))
     logprobs = log1 + log2
     cost = -logprobs
     cost = np.squeeze(cost)
+    cost = np.sum(cost)
     return cost
 
 
@@ -79,7 +88,7 @@ def backward_propogation(W,B,X,Y,A,A_final):
     dZ = A_final - Y
     #print(Y)
     for i in range(len(W),0,-1):
-        #print("i is " + str(i))
+        #print("Backward propogation i is " + str(i))
         #print("dz size " + str(dZ.shape))
         #print("w size " + str(W[str(i)].shape))
         #print("back propogation " + str(i))
@@ -101,11 +110,14 @@ def update_parameters(W,B,dW,dB,learning_rate):
     W_updated = {}
     B_updated = {}
     for i in range(1,l+1):
+        #print("update parameters i is " + str(i))
         index = str(i)
         w = W[index]
         b = B[index]
         dw = dW[index]
+        #print("dw shape is " + str(dw.shape))
         db = dB[index]
+        #print("db shape is " + str(db.shape))
         W_updated[index] = w - learning_rate*dw
         B_updated[index] = b - learning_rate*db
     return W_updated,B_updated
@@ -113,6 +125,9 @@ def update_parameters(W,B,dW,dB,learning_rate):
 
 def nn_model(X,Y,hidden_layers,num_iterations) :
     n_x,n_h,n_y = initialize_layers(X,Y,hidden_layers)
+    #print("X shape " + str(X.shape))
+    print("X shape " + str(X.shape))
+    print("Y shape " + str(Y.shape))
     #print("Layer sizes " + str(n_x) + " " + str(n_y))
     W,B = initialize_parameters(n_x,n_h,n_y)
     # for w in W.keys():
@@ -122,7 +137,7 @@ def nn_model(X,Y,hidden_layers,num_iterations) :
         cost = cost_function(A_final,Y)
         dW,dB = backward_propogation(W,B,X,Y,A,A_final)
         #print("Updated dW " + str(dW))
-        W,B = update_parameters(W,B,dW,dB,0.20)
+        W,B = update_parameters(W,B,dW,dB,0.01)
         print("Cost is " + str(cost))
 
     return W,B

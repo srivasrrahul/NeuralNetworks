@@ -6,8 +6,8 @@ import multiLayerNeuralNetwork
 
 PREFIX = "/Users/rasrivastava/neural_net/code/files/train/train/"
 
-PERCENT = 5
-IMAGE_SIZE = (20,100)
+PERCENT = 1
+IMAGE_SIZE = (100,100)
 def prepareInputForCat(catFileName):
     X = np.zeros((1,1))
     assigned = False
@@ -21,13 +21,19 @@ def prepareInputForCat(catFileName):
                 imageFile = imageFile.replace("\n","")
                 arr = np.asarray(PIL.Image.open(imageFile))
                 updatedArr = cv2.resize(arr, IMAGE_SIZE)
+                #print("updated are " + str(updatedArr.shape))
                 x = updatedArr.flatten()
                 x = x/255.0
+                y = np.reshape(x,(x.shape[0],1))
+                #print("y shape " + str(y.shape))
+                x = y
+
                 if (assigned == False):
                     X = x
                     assigned = True
                 else:
                     X = np.column_stack((X,x))
+                    #print("Xs state " + str(X.shape))
             else:
                 #print("Skip sample " + str(count))
                 count = 0
@@ -47,6 +53,7 @@ def prepareInputForDog(dogFileName):
                 arr = np.asarray(PIL.Image.open(imageFile))
                 updatedArr = cv2.resize(arr, IMAGE_SIZE)
                 y = updatedArr.flatten()
+                y = np.reshape(y,(y.shape[0],1))
                 #y = (y - np.mean(y))/np.std(y)
                 y = y/255.0
                 if (assigned == False):
@@ -66,8 +73,13 @@ def formInputOutput():
     X1 = prepareInputForCat("/Users/rasrivastava/neural_net/code/files/train/train/catFile.txt")
     X2 = prepareInputForDog("/Users/rasrivastava/neural_net/code/files/train/train/dogFile.txt")
 
+
+    print("X1 shape " + str(X1.shape))
+    print("X2 shape " + str(X2.shape))
     Y1 = np.ones((1,X1.shape[1]))
     Y2 = np.zeros((1,X2.shape[1]))
+    print("Y1.shape " + str(Y1.shape))
+    print("Y2 shape " + str(Y2.shape))
 
     X = np.concatenate((X1,X2),axis=1)
 
@@ -142,12 +154,15 @@ def predict(W,B,imageFile):
     updatedArr = cv2.resize(arr, IMAGE_SIZE)
     x = updatedArr.flatten()
     x = x/255.0
+    y = np.reshape(x,(x.shape[0],1))
+    x = y
     # z = np.dot(w.T,x) + b
     # a = np.tanh(z)
+    #print("X shape " + str(x.shape))
     Z,A,A_final = multiLayerNeuralNetwork.forward_propogation(x,W,B)
-    #print(A_final)
-    a = A_final[0][A_final.shape[1]-1]
-    print(a)
+    #print("As shape " + str(A_final.shape))
+    a = A_final[0][0]
+    #print(a)
     if (a > 0.5):
         return True
     else:
@@ -184,14 +199,14 @@ def predictDogFiles(W,B):
 
 
 def train_neural_network():
-    #X,Y = formInputOutput()
-    #print(X.shape)
-    #print(Y.shape)
-    X,Y = formInputOutputRandom()
+    X,Y = formInputOutput()
+    print(X.shape)
+    print(Y.shape)
+    #X,Y = formInputOutputRandom()
     #print(X.shape)
     #print(Y.shape)
     print("Formatted successfully")
-    W,B = multiLayerNeuralNetwork.nn_model(X,Y,2,1000)
+    W,B = multiLayerNeuralNetwork.nn_model(X,Y,2,5)
     predictCatFiles(W,B)
     print("for dogs")
     predictDogFiles(W,B)
